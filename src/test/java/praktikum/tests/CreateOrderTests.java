@@ -4,7 +4,6 @@ import io.qameta.allure.Link;
 import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
-import org.apache.commons.lang3.ObjectUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,18 +13,18 @@ import praktikum.handlers.apiclients.OrderApiClient;
 import praktikum.handlers.apiclients.ResponseChecks;
 import praktikum.handlers.apiclients.UserApiClient;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-import java.util.*;
-
-import static java.sql.Types.NULL;
 import static org.junit.Assert.fail;
 
 @DisplayName("4. Создание заказа")
 @Link(value = "Документация", url = "https://code.s3.yandex.net/qa-automation-engineer/java/cheatsheets/paid-track/diplom/api-documentation.pdf")
 public class CreateOrderTests {
 
-    private String email, password, name, token;
-    private List<Ingredient> ingredients = new ArrayList<>();
+    private String token; // Оставляем на уровне класса, так как используется в нескольких методах
+    private List<Ingredient> ingredients = new ArrayList<>(); // Оставляем на уровне класса, так как используется в нескольких тестах
     private final OrderApiClient orderApi = new OrderApiClient();
     private final UserApiClient userApi = new UserApiClient();
     private final ResponseChecks checks = new ResponseChecks();
@@ -33,9 +32,10 @@ public class CreateOrderTests {
     @Before
     @Step("Подготовка тестовых данных")
     public void prepareTestData() {
-        email = "e-mail_" + UUID.randomUUID() + "@mail.com";
-        password = "pass_" + UUID.randomUUID();
-        name = "name";
+        // Перемещаем email, password, name в локальные переменные
+        String email = "e-mail_" + UUID.randomUUID() + "@mail.com";
+        String password = "pass_" + UUID.randomUUID();
+        String name = "name";
 
         // Создание пользователя
         Response response = userApi.createUser(email, password, name);
@@ -55,6 +55,7 @@ public class CreateOrderTests {
         if(token == null || ingredients.isEmpty())
             fail("Отсутствует токен или не получен список ингредиентов");
     }
+
     @After
     @Step("Удаление тестовых пользователей")
     public void cleanTestData() {
@@ -63,6 +64,7 @@ public class CreateOrderTests {
 
         checks.checkStatusCode(userApi.deleteUser(token), 202);
     }
+
     @Test
     @DisplayName("Создание заказа: с авторизацией и с ингредиентами")
     public void createOrderWithAuthAndIngredientsIsSuccess() {
@@ -74,6 +76,7 @@ public class CreateOrderTests {
         checks.checkStatusCode(response, 200);
         checks.checkLabelSuccess(response, "true");
     }
+
     @Test
     @DisplayName("Создание заказа: без авторизации и с ингредиентами")
     public void createOrderWithoutAuthAndWithIngredientsIsFailed() {
@@ -82,6 +85,7 @@ public class CreateOrderTests {
 
         checks.checkStatusCode(response, 403);
     }
+
     @Test
     @DisplayName("Создание заказа: с авторизацией и без ингредиентов")
     public void createOrderWithAuthAndWithoutIngredientsIsSuccess() {
@@ -94,6 +98,7 @@ public class CreateOrderTests {
         checks.checkLabelSuccess(response, "false");
         checks.checkLabelMessage(response, "Ingredient ids must be provided");
     }
+
     @Test
     @DisplayName("Создание заказа: с неверным хешем ингредиентов")
     public void createOrderWithAuthAndIncorrectIngredientsIsFailed() {
